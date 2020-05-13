@@ -9,6 +9,7 @@ from django.http import HttpResponse, FileResponse
 from django.utils.encoding import escape_uri_path
 
 import logger
+from dev import uploadPath
 from .db import session, add
 from .entity import User, File, FidUid
 from .util import Result, dump, get_uuid, add_to_16
@@ -55,14 +56,15 @@ def files(request):
             query = query.filter_by(uid=uid)
 
         fid_list = {x.fid for x in query.all()}
-        print('fid_list', fid_list)
+        log.info('fid_list#%s' % fid_list)
 
         file_query = session.query(File).filter(File.id.in_(fid_list))
+        total = file_query.count()
         page_size = params['pageSize']
         page_no = params['pageNo']
         data = file_query.order_by(File.id.desc()).offset((page_no - 1) * page_size).limit(page_size).all()
         list = [{'id': x.id, 'name': x.name, 'size': x.size, 'create_ts': x.create_ts, 'encryption_type': x.encryption_type} for x in data]
-        result.data = {'list': list, 'total': len(list)}
+        result.data = {'list': list, 'total': total}
     except Exception:
         tb.print_exc()
         result.code = -1
@@ -110,7 +112,7 @@ def upload(request):
             content = aes.encrypt(add_to_16(byte))
 
         uuid = get_uuid() + '.fm'
-        path = 'D:/upload/' + uuid
+        path = uploadPath + uuid
         with open(path, 'wb') as it:
             it.write(content)
 
@@ -144,7 +146,7 @@ def download(request):
                     aes = AES.new(add_to_16(private_key), model)
                     decode = aes.decrypt(it.read())
 
-            temp_path = 'D:/upload/temp/'
+            temp_path = uploadPath + 'temp/'
             if not os.path.exists(temp_path):
                 os.makedirs(temp_path)
 

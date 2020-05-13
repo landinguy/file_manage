@@ -1,7 +1,8 @@
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 
-session = sessionmaker(bind=create_engine('mysql+pymysql://root:root@localhost/file_manage'))()
+engine = create_engine('mysql+pymysql://root:root@localhost/file_manage')
+session = sessionmaker(bind=engine)()
 
 
 def get_engine(): return create_engine('mysql+pymysql://root:root@localhost/file_manage')
@@ -10,14 +11,7 @@ def get_engine(): return create_engine('mysql+pymysql://root:root@localhost/file
 def execute(sql): get_engine().connect().execute(sql)
 
 
-def get_session():
-    engine = get_engine()
-    db_session = sessionmaker(bind=engine)
-    return db_session()
-
-
 def create_table():
-    engine = get_engine()
     meta_data = MetaData(engine)
 
     # Table(
