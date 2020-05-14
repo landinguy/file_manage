@@ -1,6 +1,5 @@
 import logging.config
-
-from file_manage.settings import BASE_DIR
+from os import path
 
 
 #
@@ -25,12 +24,14 @@ def get_logger(name=None):
     return logger
 
 
-logging.config.fileConfig(BASE_DIR + '\log.conf')
+log_conf_path = path.join(path.dirname(path.abspath(__file__)), 'log.conf')
+logging.config.fileConfig(log_conf_path)
 
 
 def get(): return logging.getLogger('info')
 
 
 if __name__ == '__main__':
+    # print(log_conf_path)
     log = get()
     log.info("test python logging")

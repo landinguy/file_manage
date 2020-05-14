@@ -24,7 +24,8 @@ SECRET_KEY = '4!89ndcboar0wzueyso$&stwf^9opwh@f%3=$fluc$u8k!r$qk'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['192.168.2.113']
+# ALLOWED_HOSTS = ['49.234.19.183']
 
 # Application definition
 
@@ -123,4 +124,5 @@ STATIC_URL = '/static/'
 # )
 
 CORS_ORIGIN_WHITELIST = ['http://192.168.2.113:8088']
+# CORS_ORIGIN_WHITELIST = ['http://49.234.19.183']
 CORS_ALLOW_CREDENTIALS = True  # 指明在跨域访问中，后端是否支持对cookie的操作
