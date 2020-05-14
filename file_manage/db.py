@@ -1,3 +1,5 @@
+import traceback as tb
+
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 
@@ -5,10 +7,7 @@ engine = create_engine('mysql+pymysql://root:root@localhost/file_manage')
 session = sessionmaker(bind=engine)()
 
 
-def get_engine(): return create_engine('mysql+pymysql://root:root@localhost/file_manage')
-
-
-def execute(sql): get_engine().connect().execute(sql)
+def execute(sql): engine.connect().execute(sql)
 
 
 def create_table():
@@ -36,8 +35,12 @@ def create_table():
 
 
 def add(obj):
-    session.add(obj)
-    session.commit()
+    try:
+        session.add(obj)
+        session.commit()
+    except Exception:
+        session.rollback()
+        tb.print_exc()
 
 
 if __name__ == '__main__':
