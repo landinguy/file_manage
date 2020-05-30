@@ -123,6 +123,5 @@ STATIC_URL = '/static/'
 #     os.path.join(BASE_DIR, 'static'),  # 必须加上都好“,” 不加就报错
 # )
 
-CORS_ORIGIN_WHITELIST = ['http://192.168.2.113:8088']
-# CORS_ORIGIN_WHITELIST = ['http://49.234.19.183']
+CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:8088']
 CORS_ALLOW_CREDENTIALS = True  # 指明在跨域访问中，后端是否支持对cookie的操作

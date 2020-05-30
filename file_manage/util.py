@@ -1,10 +1,9 @@
 import json
 import os
+import traceback as tb
 import uuid
 
 import logger
-from file_manage import db
-from file_manage.entity import File
 
 log = logger.get()
 
@@ -32,35 +31,45 @@ def add_to_16(par):
     return par
 
 
-if __name__ == '__main__':
-    print()
-    # with open('D:/aa.txt', 'rb') as f:
-    #     content = f.read()
-    #     print(content)
-    #     with open('D:/bb.fm', 'wb') as f2:
-    #         encode = base64.b64encode(content)
-    #         print('encode', encode)
-    #         f2.write(encode)
+def encrypt(sk, data):
+    b = bytearray(str(data).encode())
+    n = len(b)  # 计算字节数
+    c = bytearray(n * 2)
+    j = 0
+    for i in range(0, n):
+        b1 = b[i] ^ sk
+        c1 = b1 % 16 + 65
+        c2 = b1 // 16 + 65  # c1,c2都是0~15之间的数,加上65就变成了A-P 的字符的编码
+        c[j] = c1
+        c[j + 1] = c2
+        j = j + 2
+    return c.decode()
 
-    # with open('D:/bb.fm', 'rb') as f:
-    #     read = f.read()
-    #     print(read)
-    #     with open('D:/cc.txt', 'wb') as f2:
-    #         decode = base64.b64decode(read)
-    #         print('decode', decode)
-    #         f2.write(decode)
 
-    # password = '123456'.encode()
-    # text = 'hello world'.encode()
-    # model = AES.MODE_ECB  # 定义模式
-    # aes = AES.new(add_to_16(password), model)  # 创建一个aes对象
-    #
-    # en_text = aes.encrypt(add_to_16(text))  # 加密明文
-    # print(en_text)
-    #
-    # decrypt = aes.decrypt(en_text)
-    # print(decrypt)
-    list = db.get_session().query(File).all()
+def decrypt(sk, data):
+    try:
+        c = bytearray(str(data).encode())
+        n = len(c)  # 计算字节数
+        if n % 2 != 0:
+            return ""
+        n = n // 2
+        b = bytearray(n)
+        j = 0
+        for i in range(0, n):
+            c1 = c[j] - 65
+            c2 = c[j + 1] - 65
+            b1 = (c2 * 16 + c1) ^ sk
+            b[i] = b1
+            j = j + 2
+        return b.decode()
+    except Exception:
+        tb.print_exc()
+        log.error("解密失败")
 
-    print([x.__dict__ for x in list])
+# if __name__ == '__main__':
+#     sk = 12
+#     s1 = encrypt(sk, 'hello python')
+#     s2 = decrypt(sk, s1)
+#     print(s1, s2)
+
 # 安装pycryptodome： pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple pycryptodome

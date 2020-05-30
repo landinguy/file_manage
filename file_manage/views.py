@@ -12,10 +12,11 @@ import logger
 from dev import uploadPath
 from .db import session, add
 from .entity import User, File, FidUid
-from .util import Result, dump, get_uuid, add_to_16
+from .util import Result, dump, get_uuid, add_to_16, encrypt, decrypt
 
 log = logger.get()
 model = AES.MODE_ECB
+sk = 12
 
 
 def login(request):
@@ -101,6 +102,10 @@ def upload(request):
         uid = request.POST.get('uid')
         log.info('上传文件,filename#%s,encryption_type#%s,uid#%s' % (filename, encryption_type, uid))
 
+        log.info('before encode---#%s' % byte)
+        byte = encrypt(sk, byte)
+        # log.info('encode---#%s' % byte)
+        byte = byte.encode()
         # base64加密
         if encryption_type == 1:
             content = base64.b64encode(byte)
@@ -110,7 +115,6 @@ def upload(request):
             private_key = get_uuid()
             aes = AES.new(add_to_16(private_key.encode()), model)
             content = aes.encrypt(add_to_16(byte))
-
         uuid = get_uuid() + '.fm'
         path = uploadPath + uuid
         with open(path, 'wb') as it:
@@ -144,8 +148,12 @@ def download(request):
                 else:
                     private_key = select.private_key.encode()
                     aes = AES.new(add_to_16(private_key), model)
-                    decode = aes.decrypt(it.read())
+                    decode = aes.decrypt(it.read()).replace(b'\x00', b'')
 
+            decode = decode.decode()
+            # log.info('before decode---#%s' % (decode))
+            decode = decrypt(sk, decode).replace('\'', '').replace('b', '').encode()
+            log.info('after decode---#%s' % decode)
             temp_path = uploadPath + 'temp/'
             if not os.path.exists(temp_path):
                 os.makedirs(temp_path)
