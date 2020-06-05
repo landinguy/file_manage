@@ -1,22 +1,23 @@
-import base64
 import json
 import os
 import traceback as tb
 from datetime import datetime
 
-from Crypto.Cipher import AES
 from django.http import HttpResponse, FileResponse
 from django.utils.encoding import escape_uri_path
 
 import logger
 from dev import uploadPath
+from .aes import AES, encryptData, decryptData
+from .base64 import encode_base64, decode_base64
 from .db import session, add
 from .entity import User, File, FidUid
-from .util import Result, dump, get_uuid, add_to_16, encrypt, decrypt
+from .util import Result, dump, get_uuid
 
 log = logger.get()
-model = AES.MODE_ECB
+model = AES.MODE_CBC
 sk = 12
+key = 'fgjtjirj4o234234'
 
 
 def login(request):
@@ -102,23 +103,21 @@ def upload(request):
         uid = request.POST.get('uid')
         log.info('上传文件,filename#%s,encryption_type#%s,uid#%s' % (filename, encryption_type, uid))
 
-        log.info('before encode---#%s' % byte)
-        byte = encrypt(sk, byte)
-        # log.info('encode---#%s' % byte)
-        byte = byte.encode()
+        # log.info('before encode---#%s' % byte)
+
         # base64加密
         if encryption_type == 1:
-            content = base64.b64encode(byte)
+            content = encode_base64(byte.decode())
+            # content = base64.b64encode(byte)
 
         # AES加密
         else:
-            private_key = get_uuid()
-            aes = AES.new(add_to_16(private_key.encode()), model)
-            content = aes.encrypt(add_to_16(byte))
+            content = encryptData(byte.decode(), key, model)
+
         uuid = get_uuid() + '.fm'
         path = uploadPath + uuid
         with open(path, 'wb') as it:
-            it.write(content)
+            it.write(content.encode())
 
         create_ts = str(datetime.today().replace(microsecond=0))
         f = File(name=filename, uid=uid, size=size, create_ts=create_ts, content=path, encryption_type=encryption_type, private_key=private_key)
@@ -143,17 +142,13 @@ def download(request):
             filename = select.name
             decode = None
             with open(select.content, 'rb') as it:
+                decode = it.read().decode()
                 if encryption_type == 1:
-                    decode = base64.b64decode(it.read())
+                    decode = decode_base64(decode)
                 else:
-                    private_key = select.private_key.encode()
-                    aes = AES.new(add_to_16(private_key), model)
-                    decode = aes.decrypt(it.read()).replace(b'\x00', b'')
+                    decode = decryptData(decode, key, model)
 
-            decode = decode.decode()
-            # log.info('before decode---#%s' % (decode))
-            decode = decrypt(sk, decode).replace('\'', '').replace('b', '').encode()
-            log.info('after decode---#%s' % decode)
+            # log.info('after decode---#%s' % decode)
             temp_path = uploadPath + 'temp/'
             if not os.path.exists(temp_path):
                 os.makedirs(temp_path)
@@ -161,7 +156,7 @@ def download(request):
             # 生成解密文件
             file_path = temp_path + filename
             with open(file_path, 'wb') as it:
-                it.write(decode)
+                it.write(decode.encode())
 
             file = open(file_path, 'rb')
             response = FileResponse(file)
